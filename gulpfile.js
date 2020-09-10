@@ -6,7 +6,9 @@ const gulp = require('gulp'),
 	watch = require('gulp-watch'),
 	sass = require('gulp-sass'),
 	rigger = require('gulp-rigger'),
+	gulpif = require('gulp-if'),
 	cssmin = require('gulp-cssmin'),
+	sourcemaps = require('gulp-sourcemaps'),
 	gcmq = require('gulp-group-css-media-queries'),
 	data = require('gulp-data'),
 	twig = require('gulp-twig'),
@@ -76,9 +78,11 @@ const markup = function() {
 const styles = function() {
 	return gulp.src(path.src.style)
 		.pipe(plumber({errorHandler: onError}))
+		.pipe(gulpif(!productionMode,sourcemaps.init()))
 		.pipe(sass())
 		.pipe(gcmq())
-		.pipe(cssmin())
+		.pipe(gulpif(productionMode, cssmin()))
+		.pipe(gulpif(!productionMode,sourcemaps.write()))
 		.pipe(gulp.dest(path.build.css))
 		.pipe(reload({stream: true}));
 };
@@ -87,8 +91,10 @@ const scripts = function() {
 	return gulp.src(path.src.js)
 		.pipe(plumber({errorHandler: onError}))
 		.pipe(rigger())
+		.pipe(gulpif(!productionMode,sourcemaps.init()))
 		.pipe(babel({presets: ['@babel/env']}))
-		.pipe(uglify())
+		.pipe(gulpif(productionMode, uglify()))
+		.pipe(gulpif(!productionMode,sourcemaps.write()))
 		.pipe(gulp.dest(path.build.js))
 		.pipe(reload({stream: true}));
 };
@@ -117,7 +123,16 @@ const clean = function (cb) {
 	rimraf(path.clean, cb);
 };
 
+const prodMode = function (cb) {
+	productionMode = true;
+	cb();
+};
+
+let productionMode = false;
+
 const build = gulp.series(styles, scripts, markup, svg, watchTask);
+const prod = gulp.series(prodMode, styles, scripts, markup, svg);
+
 
 exports.clean = clean;
 exports.styles = styles;
@@ -131,3 +146,4 @@ exports.build = build;
  */
 
 exports.default = build;
+exports.production = prod;
