@@ -108,6 +108,7 @@ const watchTask = function() {
 	gulp.watch(path.watch.style, styles);
 	gulp.watch(path.watch.twig, markup);
 	gulp.watch(path.watch.svg, svg);
+	gulp.watch(path.watch.data, markup);
 
 	webServer();
 };
