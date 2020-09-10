@@ -11,6 +11,7 @@ const gulp = require('gulp'),
 	data = require('gulp-data'),
 	twig = require('gulp-twig'),
 	uglify = require('gulp-uglify-es').default,
+	babel = require('gulp-babel'),
 	rimraf = require('rimraf'),
 	svgSprite = require('gulp-svg-sprite'),
 	browserSync = require("browser-sync"),
@@ -85,7 +86,9 @@ const styles = function() {
 const scripts = function() {
 	return gulp.src(path.src.js)
 		.pipe(plumber({errorHandler: onError}))
-		.pipe(rigger()).pipe(uglify())
+		.pipe(rigger())
+		.pipe(babel({presets: ['@babel/env']}))
+		.pipe(uglify())
 		.pipe(gulp.dest(path.build.js))
 		.pipe(reload({stream: true}));
 };
