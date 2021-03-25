@@ -20,6 +20,8 @@ const gulp = require('gulp'),
 	fs = require('file-system'),
 	reload = browserSync.reload;
 
+const fractal = require('@frctl/fractal').create()
+
 const onError = function (err) {
 	notify.onError({
 		title: "Gulp",
@@ -62,6 +64,38 @@ const config = {
 	host: 'localhost',
 	port: 9000,
 	logPrefix: "Frontend"
+};
+
+fractal.set('project.title', 'Template Styleguide');
+fractal.web.set('builder.dest', `${__dirname}/build`);
+fractal.web.set('static.path', `${__dirname}/build`);
+fractal.docs.set('path', `${__dirname}/docs`);
+fractal.components.set('path', `${__dirname}/src/components`);
+fractal.components.engine(require('@frctl/twig'));
+fractal.components.set('ext', '.twig');
+
+
+
+const logger = fractal.cli.console;
+
+
+const frctlStart = function() {
+	const server = fractal.web.server({
+		sync: true
+	});
+	server.on('error', err => logger.error(err.message));
+	return server.start().then(() => {
+		logger.success(`Fractal server is now running at ${server.url}`);
+	});
+};
+
+const frctlBuld = function() {
+	const builder = fractal.web.builder();
+	builder.on('progress', (completed, total) => logger.update(`Exported ${completed} of ${total} items`, 'info'));
+	builder.on('error', err => logger.error(err.message));
+	return builder.build().then(() => {
+		logger.success('Fractal build completed!');
+	});
 };
 
 const markup = function() {
@@ -130,10 +164,12 @@ const prodMode = function (cb) {
 
 let productionMode = false;
 
-const build = gulp.series(styles, scripts, markup, svg, watchTask);
-const prod = gulp.series(prodMode, styles, scripts, markup, svg);
+const build = gulp.series(styles, scripts, markup, svg, frctlStart, watchTask);
+const prod = gulp.series(prodMode, styles, scripts, markup, svg, frctlBuld);
 
 
+exports.frctlStart = frctlStart;
+exports.frctlBuld = frctlBuld;
 exports.clean = clean;
 exports.styles = styles;
 exports.scripts = scripts;
