@@ -1,6 +1,7 @@
 'use strict';
 
 const gulp = require('gulp'),
+	path = require('path'),
 	plumber = require('gulp-plumber'),
 	notify = require('gulp-notify'),
 	watch = require('gulp-watch'),
@@ -33,7 +34,7 @@ const onError = function (err) {
 	this.emit('end');
 };
 
-const path = {
+const pathes = {
 	build: {
 		html: 'build/',
 		js: 'build/js/',
@@ -66,18 +67,16 @@ const config = {
 	logPrefix: "Frontend"
 };
 
-fractal.set('project.title', 'Template Styleguide');
-fractal.web.set('builder.dest', `${__dirname}/build`);
-fractal.web.set('static.path', `${__dirname}/build`);
-fractal.docs.set('path', `${__dirname}/docs`);
 fractal.components.set('path', `${__dirname}/src/components`);
 fractal.components.engine(require('@frctl/twig'));
 fractal.components.set('ext', '.twig');
-
-
+fractal.docs.set('path', path.join(__dirname, 'docs'));
+fractal.docs.engine(require('@frctl/twig'));
+fractal.web.set('static.path', path.join(__dirname, 'build'));
+fractal.web.set('static.mount', 'build');
+fractal.web.set('builder.dest', `${__dirname}/styleguide`);
 
 const logger = fractal.cli.console;
-
 
 const frctlStart = function() {
 	const server = fractal.web.server({
@@ -99,44 +98,44 @@ const frctlBuld = function() {
 };
 
 const markup = function() {
-	return gulp.src(path.src.twig)
+	return gulp.src(pathes.src.twig)
 		.pipe(plumber({errorHandler: onError}))
 		.pipe(data(function () {
- 			return JSON.parse(fs.readFileSync(path.src.data + 'data.json'));
+ 			return JSON.parse(fs.readFileSync(pathes.src.data + 'data.json'));
  		}))
 		.pipe(twig())
-		.pipe(gulp.dest(path.build.html))
+		.pipe(gulp.dest(pathes.build.html))
 		.pipe(reload({stream: true}));
 };
 
 const styles = function() {
-	return gulp.src(path.src.style)
+	return gulp.src(pathes.src.style)
 		.pipe(plumber({errorHandler: onError}))
 		.pipe(gulpif(!productionMode,sourcemaps.init()))
 		.pipe(sass())
 		.pipe(gcmq())
 		.pipe(gulpif(productionMode, cssmin()))
 		.pipe(gulpif(!productionMode,sourcemaps.write()))
-		.pipe(gulp.dest(path.build.css))
+		.pipe(gulp.dest(pathes.build.css))
 		.pipe(reload({stream: true}));
 };
 
 const scripts = function() {
-	return gulp.src(path.src.js)
+	return gulp.src(pathes.src.js)
 		.pipe(plumber({errorHandler: onError}))
 		.pipe(rigger())
 		.pipe(gulpif(!productionMode,sourcemaps.init()))
 		.pipe(babel({presets: ['@babel/env']}))
 		.pipe(gulpif(productionMode, uglify()))
 		.pipe(gulpif(!productionMode,sourcemaps.write()))
-		.pipe(gulp.dest(path.build.js))
+		.pipe(gulp.dest(pathes.build.js))
 		.pipe(reload({stream: true}));
 };
 
 const svg = function() {
-	return gulp.src(path.src.svg)
+	return gulp.src(pathes.src.svg)
 		.pipe(svgSprite({mode: {stack: {sprite: '../sprite.svg'}}}))
-		.pipe(gulp.dest(path.build.svg));
+		.pipe(gulp.dest(pathes.build.svg));
 };
 
 const webServer = function() {
@@ -144,17 +143,17 @@ const webServer = function() {
 };
 
 const watchTask = function() {
-	gulp.watch(path.watch.js, scripts);
-	gulp.watch(path.watch.style, styles);
-	gulp.watch(path.watch.twig, markup);
-	gulp.watch(path.watch.svg, svg);
-	gulp.watch(path.watch.data, markup);
+	gulp.watch(pathes.watch.js, scripts);
+	gulp.watch(pathes.watch.style, styles);
+	gulp.watch(pathes.watch.twig, markup);
+	gulp.watch(pathes.watch.svg, svg);
+	gulp.watch(pathes.watch.data, markup);
 
 	webServer();
 };
 
 const clean = function (cb) {
-	rimraf(path.clean, cb);
+	rimraf(pathes.clean, cb);
 };
 
 const prodMode = function (cb) {
